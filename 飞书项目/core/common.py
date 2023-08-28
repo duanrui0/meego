@@ -1,5 +1,5 @@
-import util.request as request
-import util.config as config
+import 飞书项目.util.request as request
+import 飞书项目.util.config as config
 
 
 def get_fsu_token():

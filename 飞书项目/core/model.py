@@ -1,10 +1,10 @@
 import re
 from typing import Optional
 
-from core.cache import user_dict
+from 飞书项目.core.cache import user_dict
 
-from util import request, config
-from util.utils import trans_unix_time, time_cost
+from 飞书项目.util import request
+from 飞书项目.util.utils import trans_unix_time, time_cost
 import math
 import os
 

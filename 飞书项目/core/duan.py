@@ -1,12 +1,8 @@
-import re
-from typing import Optional
-
-from core.cache import user_dict
-
-from util import request, config
+from 飞书项目.util import request
 import os
 import json
-import csv
+
+
 def get_header():
     header = {
         'Content-Type': 'application/json',
@@ -33,7 +29,7 @@ def get_projects():
     body = {
         "user_key": "7137587176702885916"
     }
-    result = request.post(url,header=header,payload=body)
+    result = request.post(url, header=header, payload=body)
     project_key=result['data']
     return project_key
 # 获取空间详情
@@ -47,7 +43,7 @@ def get_projects_detail():
             "sdotest"
         ]
     }
-    result=request.post(url,header=header,payload=body)
+    result= request.post(url, header=header, payload=body)
     data=result['data']
     return data
 # 3.获取视图列表
@@ -58,7 +54,7 @@ def get_version_list():
         "project_key": "64b9ea9a523ec554280f4247",
         "work_item_type_key": "story"
     }
-    result=request.post(url,header=header,payload=body)
+    result= request.post(url, header=header, payload=body)
     data=result['data']
     list = []
     for re in data :
@@ -71,7 +67,7 @@ def get_version_work_list():
     for id in get_version_list():
         url='https://project.feishu.cn/open_api/64b9ea9a523ec554280f4247/fix_view/'+id+'?page_size=22&page_num=1'
         header=get_header()
-        result=request.get(url,header=header)
+        result= request.get(url, header=header)
         aa=result['data']['work_item_id_list']
         data.append(aa)
     data = [item for sublist in data for item in sublist]
@@ -123,7 +119,7 @@ def get_project_name():
         "project_key": "64b9ea9a523ec554280f4247",
         "work_item_type_key":"story"
     }
-    result =request.post(url,header=header,payload=body)
+    result = request.post(url, header=header, payload=body)
     # data = result
     field_key_name={}
     # for i in result():
