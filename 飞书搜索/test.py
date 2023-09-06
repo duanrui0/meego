@@ -26,7 +26,11 @@
 #                     `=---='
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #          佛祖保佑       永无BUG
+import datetime
+
 if __name__ == '__main__':
     print("ceshi")
     print(0)
     print(2)
+    timestamp = int(datetime.datetime.strptime('2023-04-09 12:13:43', '%Y-%m-%d %H:%M:%S').timestamp())
+    print(timestamp)
