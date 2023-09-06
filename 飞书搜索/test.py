@@ -28,3 +28,4 @@
 #          佛祖保佑       永无BUG
 if __name__ == '__main__':
     print("ceshi")
+    print(0)
