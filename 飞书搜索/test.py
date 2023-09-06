@@ -29,3 +29,4 @@
 if __name__ == '__main__':
     print("ceshi")
     print(0)
+    print(2)
