@@ -27,6 +27,8 @@
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #          佛祖保佑       永无BUG
 import os
+from datetime import datetime
+
 import requests
 import json
 
@@ -183,8 +185,21 @@ def select_data():
     for data in rsp:
         item = data.split("##&##")
         bi_operation_details.append(item)
-    return bi_operation_details
 
+    return bi_operation_details
+def search_demo():
+    # 查询具体的值
+    result_list = select_data()
+    result_list = result_list[:-4]
+    for array in result_list:
+        print(array)
+        项目空间 = array[1]
+        名称=array[3]
+        对象类型=array[5]
+        owner=array[4]
+        url=array[7]
+        timestamp = int(datetime.datetime.strptime(array[6], '%Y-%m-%d %H:%M:%S').timestamp())
+        post_items(项目空间,名称,对象类型,owner,timestamp,url)
 
 if __name__ == "__main__":
     print("完成 bye~")
