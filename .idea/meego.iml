@@ -9,6 +9,7 @@
     <option name="namespacePackageFolders">
       <list>
         <option value="$MODULE_DIR$/飞书项目/teach" />
+        <option value="$MODULE_DIR$/飞书搜索" />
       </list>
     </option>
   </component>

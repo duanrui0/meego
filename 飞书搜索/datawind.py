@@ -91,7 +91,7 @@ def post_schemas():
                     "filter_options": {
                         "display_name": "所在项目空间",
                         "filter_type": "searchable",
-                        "reference_datasource_id": "7275611752291680257"
+                        "reference_datasource_id": "id"
                         # 这个reference_datasource_id填上一步search里面的source_id
                     }
                 },
@@ -141,12 +141,12 @@ def post_schemas():
                     "type_definitions": {
                         "tag": [
                             {
-                                "color": "green",
+                                "color": "blue",
                                 "name": "win",
                                 "text": "数据集"
                             },
                             {
-                                "color": "red",
+                                "color": "blue",
                                 "name": "lose",
                                 "text": "仪表盘"
                             }
@@ -202,8 +202,9 @@ def post_data_sources():
     # 第三步根据数据源往数据源中写数据
 
 
-def post_items():
-    url = 'https://open.feishu.cn/open-apis/search/v2/data_sources/' + post_data_sources()['data']['id'] + '/items'
+# 第三步根据数据源往数据源中写数据
+def post_items(项目空间,名称,owner,timestamp,urls,searid,idr):
+    url = 'https://open.feishu.cn/open-apis/search/v2/data_sources/7276391157616754691/items'
     # 这里的7274868529462476802是从第二步返回的id得到，因为第一步第二步只需要执行一次，所以就在这里将id直接放在这里
     headers = {
         "Authorization": "Bearer " + get_token(),
@@ -211,7 +212,7 @@ def post_items():
     }
     body = json.dumps(
         {
-            "id": "100113",
+            "id": idr,
             "acl": [
                 {
                     "access": "allow",
@@ -220,18 +221,14 @@ def post_items():
                 }
             ],
             "metadata": {
-                "source_url": "https://hailongservice.atlassian.net/browse/BFCE-11",
-                # url
-                "title": "这是一个用来演示的issue 3333333",
-                # 名称
-                "update_time": 1645595280
-            #     最新一次同步时间
+                "source_url": urls,
+                "title": 名称,
+                "update_time":timestamp
             },
-            "structured_data": "{\"owner_name\":\"测试用的issue 10015\",\"summary\":\"测试摘要\",\"assign_time\":1690782682,\"result\":\"win\", \"meeting\":\"1\"}"
-        # owner_name填Owner，summary填一个介绍，简介 assign_time填时间  result 填对象类型  meeting 填上一步的那个id固定唯一
+            "structured_data": "{\"owner_name\":\""+owner+"\",\"summary\":\""+项目空间+"\",\"assign_time\":\""+timestamp+"\",\"result\":\"lose\", \"meeting\":\""+searid+"\"}"
         })
     response = requests.request("POST", url, headers=headers, data=body)
-
+    print(body)
     print(response.text)
 
 
@@ -264,7 +261,21 @@ def search_demo():
         owner=array[4]
         url=array[7]
         timestamp = int(datetime.datetime.strptime(array[6], '%Y-%m-%d %H:%M:%S').timestamp())
-        post_items(项目空间,名称,对象类型,owner,timestamp,url)
+        id=1
+        post_items(项目空间,名称,对象类型,owner,timestamp,url,id)
 
 if __name__ == "__main__":
-    print("完成 bye~")
+    # print("完成 bye~")
+    项目空间 =      'Demo项目'
+
+    名称 ="view"
+    对象类型 = '仪表盘'
+    owner = "admin"
+    urls = "https://datawind.nioint.com/bi#/dashboard/35850?appId=1"
+    c = '2021-12-07 20:33:39.0'
+    timestamp = str(int(datetime.datetime.strptime(c, '%Y-%m-%d %H:%M:%S.%f').timestamp()))
+    searid = '1'
+
+    idr = '0'
+
+    post_items(项目空间, 名称, owner, timestamp, urls, searid, idr)

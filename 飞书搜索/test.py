@@ -1,11 +1,11 @@
 # ********************************************************************
 # Author: deep as sea
 # Create by: 2023/9/6
-# Description: 
+# Description:
 # Update: Task Update Description
 # ********************************************************************
 # -*- coding: utf-8 -*-
-# 
+#
 #                     _ooOoo_
 #                    o8888888o
 #                    88" . "88
@@ -45,4 +45,7 @@ if __name__ == '__main__':
         "msg": "success"
     }
     b=a['data']['data_source']['id']
-    print(b)
+    # print(b)
+    c='2021-12-07 20:33:39'
+    timestamp = str(int(datetime.datetime.strptime(c, '%Y-%m-%d %H:%M:%S').timestamp()))
+    print(timestamp)

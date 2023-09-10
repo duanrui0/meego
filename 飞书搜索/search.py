@@ -105,7 +105,7 @@ def post_schemas():
                     "is_returnable": 'true'
                 }
             ],
-            "schema_id": "dhl_schema_id"
+            "schema_id": "datawind_search_schema_id"
         }
     )
     response = requests.request("POST", url, headers=headers, data=payload)
@@ -122,10 +122,10 @@ def post_data_sources():
     }
     # 根据数据范式，设置数据源，就相当于搜索中的分类
     payload = json.dumps({
-        "name": "zzh",
+        "name": "kongjian",
         "description": "",
         "icon_url": "",
-        "schema_id": "dhl_schema_id",
+        "schema_id": "datawind_search_schema_id",
         "template": "",
         "state": 0
     })
@@ -136,8 +136,8 @@ def post_data_sources():
     # 第三步根据数据源往数据源中写数据
 
 
-def post_items():
-    url = 'https://open.feishu.cn/open-apis/search/v2/data_sources/' + post_data_sources()['data']['id'] + '/items'
+def post_items(项目空间,名称,owner,url,timestamp,id):
+    url = 'https://open.feishu.cn/open-apis/search/v2/data_sources/7274868529462476802/items'
     # 这里的7274868529462476802是从第二步返回的id得到，因为第一步第二步只需要执行一次，所以就在这里将id直接放在这里
     headers = {
         "Authorization": "Bearer " + get_token(),
@@ -145,7 +145,7 @@ def post_items():
     }
     body = json.dumps(
         {
-            "id": "1", #id可传
+            "id": id, #id可传，跟项目空间保持一对一
             "acl": [
                 {
                     "access": "allow",
@@ -154,14 +154,14 @@ def post_items():
                 }
             ],
             "metadata": {
-                "source_url": "https://hailongservice.atlassian.net/browse/BFCE-11",
+                "source_url": url,
                 # 这个就传url吧，没啥说的
-                "title": "B2-17",
+                "title": 名称,
                 # 传项目空间
-                "update_time": 1645595280
+                "update_time": timestamp
                 #时间就传时间
             },
-            "structured_data": "{\"summary\":\"学清B2-17\",\"footer\":\"测试学清会议室2楼\"}"
+            "structured_data": "{\"summary\":\""+项目空间+"\",\"footer\":\""+owner+"\"}"
         #summary传的这个空间的标题，然后fotter相当于介绍
         })
     response = requests.request("POST", url, headers=headers, data=body)
@@ -199,7 +199,8 @@ def search_demo():
         owner=array[4]
         url=array[7]
         timestamp = int(datetime.datetime.strptime(array[6], '%Y-%m-%d %H:%M:%S').timestamp())
-        post_items(项目空间,名称,对象类型,owner,timestamp,url)
+        id=array[0]
+        post_items(项目空间,名称,owner,url,timestamp,id)
 
 if __name__ == "__main__":
     print("完成 bye~")
