@@ -203,7 +203,7 @@ def post_data_sources():
 
 
 # 第三步根据数据源往数据源中写数据
-def post_items(项目空间,名称,owner,timestamp,urls,searid,idr):
+def post_items(项目空间,名称,owner,timestamp,urls,searid,idr,仪表盘还是数据集):
     url = 'https://open.feishu.cn/open-apis/search/v2/data_sources/7276391157616754691/items'
     # 这里的7274868529462476802是从第二步返回的id得到，因为第一步第二步只需要执行一次，所以就在这里将id直接放在这里
     headers = {
@@ -225,13 +225,20 @@ def post_items(项目空间,名称,owner,timestamp,urls,searid,idr):
                 "title": 名称,
                 "update_time":timestamp
             },
-            "structured_data": "{\"owner_name\":\""+owner+"\",\"summary\":\""+项目空间+"\",\"assign_time\":\""+timestamp+"\",\"result\":\"lose\", \"meeting\":\""+searid+"\"}"
+            "structured_data": "{\"owner_name\":\""+owner+"\",\"summary\":\""+项目空间+"\",\"assign_time\":\""+timestamp+"\",\"result\":\""+仪表盘还是数据集+"\", \"meeting\":\""+searid+"\"}"
         })
     response = requests.request("POST", url, headers=headers, data=body)
     print(body)
     print(response.text)
 
-
+def delete_item(idr):
+    url='https://open.feishu.cn/open-apis/search/v2/data_sources/7276391157616754691/items/'+idr+'\''
+    headers = {
+        "Authorization":"Bearer "+get_token()
+    }
+    payload={}
+    response = requests.request("DELETE", url, headers=headers, data=payload)
+    print(response.text)
 # 获取hive任务
 def exe_sql(sql):
     cmd = '/opt/tiger/hive_deploy/bin/hive -e "%s"' % sql
@@ -258,24 +265,27 @@ def search_demo():
         项目空间 = array[1]
         名称=array[3]
         对象类型=array[5]
+        if 对象类型 == '数据集':
+            b = 'win'
+        elif 对象类型 == '仪表盘':
+            b = 'lose'
+        elif 对象类型 == '可视化建模':
+            b = 'jianmo'
+        elif 对象类型 == '大屏':
+            b = 'daping'
+        仪表盘还是数据集=b
         owner=array[4]
         url=array[7]
-        timestamp = int(datetime.datetime.strptime(array[6], '%Y-%m-%d %H:%M:%S').timestamp())
-        id=1
-        post_items(项目空间,名称,对象类型,owner,timestamp,url,id)
+        timestamp = str(int(datetime.datetime.strptime(array[6], '%Y-%m-%d %H:%M:%S').timestamp()))
+        searid=str(array[0])
+        idr=str(array[8])
+        type=''
+        print(项目空间,名称,owner,timestamp,url,searid,idr)
+        if type=='删除':
+            delete_item(idr)
+        else:
+            post_items(项目空间,名称,owner,timestamp,url,searid,idr,仪表盘还是数据集)
 
 if __name__ == "__main__":
-    # print("完成 bye~")
-    项目空间 =      'Demo项目'
-
-    名称 ="view"
-    对象类型 = '仪表盘'
-    owner = "admin"
-    urls = "https://datawind.nioint.com/bi#/dashboard/35850?appId=1"
-    c = '2021-12-07 20:33:39.0'
-    timestamp = str(int(datetime.datetime.strptime(c, '%Y-%m-%d %H:%M:%S.%f').timestamp()))
-    searid = '1'
-
-    idr = '0'
-
-    post_items(项目空间, 名称, owner, timestamp, urls, searid, idr)
+    search_demo()
+    print('bye~')

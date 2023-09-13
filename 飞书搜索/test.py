@@ -48,4 +48,13 @@ if __name__ == '__main__':
     # print(b)
     c='2021-12-07 20:33:39'
     timestamp = str(int(datetime.datetime.strptime(c, '%Y-%m-%d %H:%M:%S').timestamp()))
-    print(timestamp)
+    # print(timestamp)
+    t=[1,3,3]
+    a='仪表盘'
+    b=''
+    for i in t :
+        if a=='数据集':
+            b='lose'
+        elif a=='仪表盘':
+            b='win'
+        print(a,b)
