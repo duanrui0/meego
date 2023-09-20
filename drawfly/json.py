@@ -1,6 +1,6 @@
 # ********************************************************************
 # Author: deep as sea
-# Create by: 2023/9/13
+# Create by: 2023/9/15
 # Description: 
 # Update: Task Update Description
 # ********************************************************************
@@ -26,23 +26,10 @@
 #                     `=---='
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #          佛祖保佑       永无BUG
-from pyspark import SparkConf, SparkContext
+from pyspark import SparkConf,SparkContext
+from pyspark.sql import SparkSession
 
-# 创建Spark配置和上下文
-conf = SparkConf().setMaster("local").setAppName("WordCount")
-sc = SparkContext(conf=conf)
+spark=SparkSession.builder.appName("json").master("local").getOrCreate()
 
-# 读取文本文件并将数据转换为RDD
-input_rdd = sc.textFile("input.txt")
-lines = input_rdd.collect()
-for line in lines:
-    print(line)
-words_rdd = input_rdd.flatMap(lambda line: line.split(" "))
-word_counts_rdd = words_rdd.map(lambda word: (word, 1))
-reduced_rdd = word_counts_rdd.reduceByKey(lambda x, y: x + y)
-reduced_rdd.saveAsTextFile("output")
-
-print(word_counts_rdd)
-
-# 停止SparkContext
-sc.stop()
+json_rdd=spark.read.json("input.json")
+rdd=json_rdd.rdd
