@@ -13,6 +13,7 @@ import os
 from datetime import datetime
 import re
 
+
 # 1.获取插件凭证
 def get_fsu_token():
     url = 'https://project.feishu.cn/open_api/authen/plugin_token'
@@ -52,7 +53,7 @@ def get_projects():
         "user_key": "7152725637445287938"
     })
     response = requests.request('POST', url, headers=header, data=body)
-    # print(response.text)
+    print(response.text)
     data = json.loads(response.text)
     return data['data']
 
@@ -117,6 +118,75 @@ def process_data(original_list, batch_size):
     return processed_list
 
 
+# 数据打平
+def flatten(lst):
+    result = []
+    for elem in lst:
+        if isinstance(elem, list):
+            result.extend(flatten(elem))
+        else:
+            elem_str = str(elem).replace("\'", "").replace("None", "").replace('\"', "").replace('\'', '')
+            result.append(elem_str)
+    return result
+
+
+# 获取所有人员key
+def get_users_all(result):
+    # 获取field_name对应的具体field_key
+    data = get_project_name()
+    numbers = list(range(0, len(result)))
+    # 计算工作项目数量
+    wsd = []
+    user_all = []
+    for item in numbers:
+        aa = result[item]
+        bb = json.loads(aa)
+
+        # deleted_by = get_project_user_name(replace_wrap(bb['deleted_by'])) if 'deleted_by' in bb else None  # 删除人
+        deleted_by = replace_wrap(bb['deleted_by']) if 'deleted_by' in bb else None  # 删除人
+        temp_user = replace_wrap(bb['current_status_operator']) if 'current_status_operator' in bb else None  # 当前负责人
+        # owner = get_project_user_name(replace_wrap(bb['owner'])) if 'owner' in bb else None  # 创建者
+        owner = replace_wrap(bb['owner']) if 'owner' in bb else None  # 创建者
+        # updated_by = get_project_user_name(replace_wrap(bb['updated_by'])) if 'updated_by' in bb else None  # 更新人
+        updated_by = replace_wrap(bb['updated_by']) if 'updated_by' in bb else None  # 更新人
+        watchers = replace_wrap(bb['watchers']) if 'watchers' in bb else None  # 关注人
+        current_time = datetime.now()
+        user_all.append([deleted_by, temp_user, owner, updated_by])
+
+    # 将人员信息提取出来 放进{}里
+    pattern = re.compile(r'[\[\]\']+')
+    lst_without_brackets = [re.sub(pattern, '', str(elem)) for elem in user_all]
+    flat_list = flatten(lst_without_brackets)
+    user_all = str(flat_list).replace('\'None', '').replace('None\'', '').replace('\',', '').replace(' ', '').replace(
+        '[', '').replace(']', '')
+    user_all = user_all.split(',')
+
+    users_alls = get_project_user_name(user_all)
+    # print(users_alls)
+    return users_alls
+
+
+# 将key转为name
+def get_user_value_all(user_value, result):
+    temp_user = []
+
+    if result is not None and result != '[':
+
+        for user in result:
+            print(user)
+            print(type(user))
+            print("=====")
+            if re.match(r"\d{19}", user):
+                temp_user.append(user_value[user])
+            else:
+                temp_user = []
+
+    else:
+        print()
+
+    return temp_user
+
+
 # 5.获取工作项详情
 def get_work_item_query():
     field = []
@@ -125,7 +195,6 @@ def get_work_item_query():
     batch_size = 50
 
     result = process_data(data, batch_size)
-
     url = "https://project.feishu.cn/open_api/63f71b3c504623c16c7fbce2/work_item/story/query?project_key=63f71b3c504623c16c7fbce2&work_item_type_key=story"
     header = get_header()
     for i in result:
@@ -168,13 +237,6 @@ def get_work_item_query():
     return field
 
 
-def write_to_file(data, filename):
-    with open(filename, 'w') as file:
-        for batch in data:
-            file.write(batch)
-            file.write('\n')
-
-
 # 6.获取空间字段
 def get_project_name():
     url = 'https://project.feishu.cn/open_api/63f71b3c504623c16c7fbce2/field/all'
@@ -191,7 +253,7 @@ def get_project_name():
 
     # 获取第一层数据
     subdata1 = data["data"]
-    # print(subdata1)
+    print(subdata1)
     # 访问第二层数据的键值对
     count = len(subdata1)
 
@@ -273,17 +335,6 @@ def replace_wrap(field):
     return field1
 
 
-def flatten(lst):
-    result = []
-    for elem in lst:
-        if isinstance(elem, list):
-            result.extend(flatten(elem))
-        else:
-            elem_str = str(elem).replace("\'", "").replace("None", "").replace('\"', "").replace('\'', '')
-            result.append(elem_str)
-    return result
-
-
 # 将数据写入csv
 def hive_load_table(table_name, csv_name):
     # 分区字段
@@ -296,55 +347,9 @@ def hive_load_table(table_name, csv_name):
     command = (c)
     os.system(command)
 
-def get_users_all(result):
-    # 获取field_name对应的具体field_key
-    data = get_project_name()
-    numbers = list(range(0, len(result)))
-    # 计算工作项目数量
-    wsd = []
-    user_all = []
-    for item in numbers:
-        aa = result[item]
-        bb = json.loads(aa)
-
-        # deleted_by = get_project_user_name(replace_wrap(bb['deleted_by'])) if 'deleted_by' in bb else None  # 删除人
-        deleted_by = replace_wrap(bb['deleted_by']) if 'deleted_by' in bb else None  # 删除人
-        temp_user = replace_wrap(bb['current_status_operator']) if 'current_status_operator' in bb else None  # 当前负责人
-        # owner = get_project_user_name(replace_wrap(bb['owner'])) if 'owner' in bb else None  # 创建者
-        owner = replace_wrap(bb['owner']) if 'owner' in bb else None  # 创建者
-        # updated_by = get_project_user_name(replace_wrap(bb['updated_by'])) if 'updated_by' in bb else None  # 更新人
-        updated_by = replace_wrap(bb['updated_by']) if 'updated_by' in bb else None  # 更新人
-        watchers = replace_wrap(bb['watchers']) if 'watchers' in bb else None  # 关注人
-        current_time = datetime.now()
-        user_all.append([deleted_by, temp_user, owner, updated_by])
-
-    # 将人员信息提取出来 放进{}里
-    pattern = re.compile(r'[\[\]\']+')
-    lst_without_brackets = [re.sub(pattern, '', str(elem)) for elem in user_all]
-    flat_list = flatten(lst_without_brackets)
-    user_all = str(flat_list).replace('\'None', '').replace('None\'', '').replace('\',', '').replace(' ', '').replace('[','').replace(']', '')
-    user_all = user_all.split(',')
-
-    users_alls=  get_project_user_name(user_all)
-    # print(users_alls)
-    return users_alls
-
-def get_user_value_all(user_value,result):
-    temp_user=[]
-
-    for user in result:
-        print(user)
-        print(type(user))
-        print("=====")
-        if re.match(r"\d{19}", user):
-            temp_user.append(user_value[user])
-        else:
-            print()
-
-    return temp_user
 
 # 获取具体的值
-def get_item_value(result):
+def get_item_value(result, writer):
     # 获取field_name对应的具体field_key
     data = get_project_name()
     option_data = get_project_option_name()
@@ -355,46 +360,68 @@ def get_item_value(result):
     numbers = list(range(0, len(result)))
     # 计算工作项目数量
     wsd = []
-    user_all = []
     user_value = get_users_all(result)
-    # print(user_value)
-    eiie=[]
     for item in numbers:
         aa = result[item]
-        print("这是一条工作项详情:", aa)
+        # print("这是一条工作项详情:",aa)
         bb = json.loads(aa)
-
-        id = bb['id'] if 'id' in bb else None
-        archiving_date = replace_wrap(bb['archiving_date'] if 'archiving_date' in bb else None)  # 归档日期
-        # deleted_by = get_project_user_name(replace_wrap(bb['deleted_by'])) if 'deleted_by' in bb else None  # 删除人
+        # id = bb['id']
+        # name=bb[result_keys[0]]
+        # business=option_data[bb['business']] if 'business' in bb else None #业务线
+        # field_9caa40=get_project_user_name(bb['field_9caa40'][0]) if 'field_9caa40' in bb else None #废弃-负责人
+        # for item in bb['field_69ca92']:
+        #     field_69ca92 = item['label'] if 'field_69ca92' in bb else None  #需求状态
+        #     break
+        # field_54bd08=replace_wrap(bb['field_54bd08']) if 'field_54bd08' in bb else None  #最新进展同步
+        # field_ef3e43=bb['field_ef3e43']['label'] if 'label' in bb else None  #需求优先级
+        # field_da6062=bb['field_da6062'] if 'field_da6062' in bb else None  #Vision
+        # field_16605a=bb['field_16605a'] if 'field_16605a' in bb else None  #Action
+        # wsd.append([id,name,business,field_9caa40,field_69ca92,field_54bd08,field_ef3e43,field_da6062,field_16605a])
+        # writer.writerow(
+        #     [id,name,business,field_9caa40,field_69ca92,field_54bd08,field_ef3e43,field_da6062,field_16605a]
+        #     )
+        id = bb['id']
+        archiving_date = replace_wrap(bb['archiving_date']) if 'archiving_date' in bb else None  # 归档日期
+        # deleted_by = get_project_user_name(replace_wrap(bb['deleted_by'])) if 'deleted_by' in bb else None  #删除人
         deleted_by = replace_wrap(bb['deleted_by']) if 'deleted_by' in bb else None  # 删除人
-        eiie.append(deleted_by)
+        deleted_by = get_user_value_all(user_value, deleted_by)
+        # deleted_by=''
         business = replace_wrap(bb['business']) if 'business' in bb else None  # 业务线
         temp_user = replace_wrap(bb['current_status_operator']) if 'current_status_operator' in bb else None  # 当前负责人
-        print("temp_user的值为", temp_user)
-        temp_user=str(temp_user).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ', '').replace('[','').replace(']', '').split(',')
-        print("temp_user的type为", type(temp_user))
-        print("temp_user的值为", temp_user)
-        temp_user=get_user_value_all(user_value,temp_user)
-        print(temp_user)
-        if temp_user is not None and len(temp_user) > 0:
-            # current_status_operator = get_project_user_name(temp_user)
-            current_status_operator = ''
-        else:
-            current_status_operator = ''
+        temp_user = str(temp_user).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ',
+                                                                                                         '').replace(
+            '[', '').replace(']', '').split(',')
+
+        # print("temp_user的type为",type(temp_user))
+        # print("temp_user的值为",temp_user)
+        # 清洗string类型的多选人员字段
+        # temp_user = temp_user.replace("'","").split(',')
+        # temp_user = eval(temp_user.replace("'",'"'))
+        # temp_user = temp_user.split(',')
+        current_status_operator = get_user_value_all(user_value, temp_user)
+        # if temp_user is not None and len(temp_user) > 0:
+        #     # current_status_operator = get_project_user_name(temp_user)
+        #     current_status_operator = ''
+        # else:
+
+        #     current_status_operator = ''
         deleted_at = replace_wrap(bb['deleted_at']) if 'deleted_at' in bb else None  # 删除时间
         description = replace_wrap(bb['description']) if 'description' in bb else None  # 需求描述
         finish_time = replace_wrap(bb['finish_time']) if 'finish_time' in bb else None  # 完成时间
         priority = replace_wrap(bb['priority']['label']) if 'label' in bb else None  # 优先级
         name = replace_wrap(bb['name']) if 'name' in bb else None  # 需求名称
         owned_project = replace_wrap(bb['owned_project']) if 'owned_project' in bb else None  # 所属空间
-        # owner = get_project_user_name(replace_wrap(bb['owner'])) if 'owner' in bb else None  # 创建者
-        owner = replace_wrap(bb['owner']) if 'owner' in bb else None  # 创建者
+        # owner = get_project_user_name(replace_wrap(bb['owner'])) if 'owner' in bb else None  #创建者
+        owner = replace_wrap(bb['owner']) if 'owner' in bb else None
+
+        owner = get_user_value_all(user_value, owner)
         schedule = replace_wrap(bb['schedule']) if 'schedule' in bb else None  # 排期
         tags = replace_wrap(bb['tags']['label']) if 'label' in bb else None  # 标签
         date = replace_wrap(bb['date']) if 'date' in bb else None  # 提出时间
-        # updated_by = get_project_user_name(replace_wrap(bb['updated_by'])) if 'updated_by' in bb else None  # 更新人
-        updated_by = replace_wrap(bb['updated_by']) if 'updated_by' in bb else None  # 更新人
+        # updated_by = get_project_user_name(replace_wrap(bb['updated_by'])) if 'updated_by' in bb else None  #更新人
+        updated_by = replace_wrap(bb['updated_by']) if 'updated_by' in bb else None
+        # updated_by=''
+        updated_by = get_user_value_all(user_value, updated_by)
         wiki = replace_wrap(bb['wiki']) if 'wiki' in bb else None  # 需求文档
         updated_at = replace_wrap(bb['updated_at']) if 'updated_at' in bb else None  # 更新时间
         watchers = replace_wrap(bb['watchers']) if 'watchers' in bb else None  # 关注人
@@ -473,6 +500,7 @@ def get_item_value(result):
              field_6647e5, field_728f95, field_f75f76, field_e70224, field_29fb34, field_0c5a16, field_97e739,
              field_ad5928, field_b482f9, field_030e59, field_f7a203, field_d1563b, field_023d10, field_bcccb9,
              field_3ec9c8, field_3eaa87, field_36de0b, field_89c432, field_bf35a9, field_739521, field_2a9429])
+        current_time = datetime.now()
         print([id, archiving_date, deleted_by, business, current_status_operator, deleted_at, description, finish_time,
                priority, name, owned_project, owner, schedule, tags, date, updated_by, wiki, updated_at, watchers,
                work_item_id, work_item_type_key, field_478e51, field_0aa003, field_a8772e, field_46bad0, field_693940,
@@ -484,74 +512,47 @@ def get_item_value(result):
                field_6647e5, field_728f95, field_f75f76, field_e70224, field_29fb34, field_0c5a16, field_97e739,
                field_ad5928, field_b482f9, field_030e59, field_f7a203, field_d1563b, field_023d10, field_bcccb9,
                field_3ec9c8, field_3eaa87, field_36de0b, field_89c432, field_bf35a9, field_739521, field_2a9429])
-        current_time = datetime.now()
         print("当前时间：", current_time)
-        print("已处理" + str(item+1) + "条")
-        user_all.append([deleted_by, temp_user, owner, updated_by])
-        print("---")
 
-        # print(owner1)
-        # print(owner)
-        # writer.writerow(
-        #     [id, archiving_date, deleted_by, business, current_status_operator, deleted_at, description, finish_time,
-        #      priority, name, owned_project, owner, schedule, tags, date, updated_by, wiki, updated_at, watchers,
-        #      work_item_id, work_item_type_key, field_478e51, field_0aa003, field_a8772e, field_46bad0, field_693940,
-        #      field_2c595c, field_aba774, field_d56473, field_f29b07, field_0b7e67, field_950dc4, field_20e79e,
-        #      field_5f5851, field_9b95ea, field_384544, field_7e5bf5, field_a86fff, field_7b36c2, field_54f49c,
-        #      field_3650f3, field_4383a0, field_028025, field_84c89b, field_dfeb1a, field_aa38f7, field_16da83,
-        #      field_92ef9d, field_71b04d, field_84292e, field_693139, template, work_item_status, field_609710,
-        #      field_98b3eb, field_0ada37, field_e941bf, field_c029b1, field_fe922d, field_2e2be1, field_295df1,
-        #      field_6647e5, field_728f95, field_f75f76, field_e70224, field_29fb34, field_0c5a16, field_97e739,
-        #      field_ad5928, field_b482f9, field_030e59, field_f7a203, field_d1563b, field_023d10, field_bcccb9,
-        #      field_3ec9c8, field_3eaa87, field_36de0b, field_89c432, field_bf35a9, field_739521, field_2a9429]
-        # )
-
-    # 将人员信息提取出来 放进{}里
-    pattern = re.compile(r'[\[\]\']+')
-    lst_without_brackets = [re.sub(pattern, '', str(elem)) for elem in user_all]
-    flat_list = flatten(lst_without_brackets)
-    user_all = str(flat_list).replace('\'None', '').replace('None\'', '').replace('\',', '').replace(' ', '').replace('[','').replace(']', '')
-    user_all = user_all.split(',')
-    print("3242434")
-    print(eiie)
-    get_project_user_name(user_all)
-
+        print("已处理" + str(item) + "条")
+        writer.writerow(
+            [id, archiving_date, deleted_by, business, current_status_operator, deleted_at, description, finish_time,
+             priority, name, owned_project, owner, schedule, tags, date, updated_by, wiki, updated_at, watchers,
+             work_item_id, work_item_type_key, field_478e51, field_0aa003, field_a8772e, field_46bad0, field_693940,
+             field_2c595c, field_aba774, field_d56473, field_f29b07, field_0b7e67, field_950dc4, field_20e79e,
+             field_5f5851, field_9b95ea, field_384544, field_7e5bf5, field_a86fff, field_7b36c2, field_54f49c,
+             field_3650f3, field_4383a0, field_028025, field_84c89b, field_dfeb1a, field_aa38f7, field_16da83,
+             field_92ef9d, field_71b04d, field_84292e, field_693139, template, work_item_status, field_609710,
+             field_98b3eb, field_0ada37, field_e941bf, field_c029b1, field_fe922d, field_2e2be1, field_295df1,
+             field_6647e5, field_728f95, field_f75f76, field_e70224, field_29fb34, field_0c5a16, field_97e739,
+             field_ad5928, field_b482f9, field_030e59, field_f7a203, field_d1563b, field_023d10, field_bcccb9,
+             field_3ec9c8, field_3eaa87, field_36de0b, field_89c432, field_bf35a9, field_739521, field_2a9429]
+        )
     return wsd
 
 
 if __name__ == '__main__':
-    # print(len(get_work_item_query()))
-    # a = [get_work_item_query(), get_project_name()]
+    a = [get_work_item_query(), get_project_name()]
     # print(a)
     # 需要设置csv格式编码,不然后面写入有可能报错
-    # csv_name = 'feishu_hive_hf.csv'
-    # csvfile = open(csv_name, 'w', newline='', encoding='utf-8-sig')  # python3下
-    # writer = csv.writer(csvfile, delimiter='^')
+    csv_name = 'feishu_hive_hf.csv'
+    csvfile = open(csv_name, 'w', newline='', encoding='utf-8-sig')  # python3下
+    writer = csv.writer(csvfile, delimiter='^')
     # 后面需要新建一个表
-    # table_name = 'dop_plm_myplm_prod.ods_ipd_feishu_to_hive_hf'
+    table_name = 'dop_plm_myplm_prod.ods_ipd_feishu_to_hive_hf'
     # a=get_item_value()
     # print(a)
-
-    # 示例用法
-    # data =get_project_option_name() # 包含多个批次数据的列表
-    # filename = 'output.txt'  # 要写入的文件名
-    # print(data)
-
-    # get_item_value(data)
     result = get_work_item_query()
-    # print(result)
-    user_value = get_item_value(result)
-    print(type(user_value))
-    print(user_value)
-    # write_to_file(data, filename)
-    # csvfile.close()
+    get_item_value(result=result, writer=writer)
 
-    # # 打开CSV文件
-    # with open('feishu_hive_hf.csv', 'r') as file:
-    #     # 创建CSV读取器
-    #     csv_reader = csv.reader(file)
-    #
-    #     # 逐行读取并打印CSV文件内容
-    #     for row in csv_reader:
-    #         print(row)
-    # hive_load_table(table_name, csv_name)
+    csvfile.close()
+
+    # 打开CSV文件
+    with open('feishu_hive_hf.csv', 'r') as file:
+        # 创建CSV读取器
+        csv_reader = csv.reader(file)
+
+        # 逐行读取并打印CSV文件内容
+        for row in csv_reader:
+            print(row)
+    hive_load_table(table_name, csv_name)
