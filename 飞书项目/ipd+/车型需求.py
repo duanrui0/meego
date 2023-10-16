@@ -162,7 +162,7 @@ def get_users_all(result):
     user_all = user_all.split(',')
 
     users_alls = get_project_user_name(user_all)
-    print(users_alls)
+    # print(users_alls)
     return users_alls
 
 
@@ -210,7 +210,6 @@ def get_work_item_query():
 
         aa = json.loads(result.text)
 
-
         for item in aa['data']:
             work_id = item['id']
             work_id11 = 'id'
@@ -224,7 +223,6 @@ def get_work_item_query():
             for item2 in fields:
                 field_key = item2['field_key']
                 field_value = item2['field_value']
-
 
                 json_data[field_key] = field_value
 
@@ -384,38 +382,59 @@ def get_item_value(result, writer):
         #     )
         id = bb['id']
         name = replace_wrap(bb['name']) if 'name' in bb else None  # 车型需求名称
-        template = replace_wrap(bb['template']['label']) if 'label' in bb else None  # 车型需求审批流程
-        priority = replace_wrap(bb['priority']['label']) if 'label' in bb else None  # 优先级
+        template = replace_wrap(bb['template']['label']) if 'template' and 'label' in bb else None  # 车型需求审批流程
+        priority = replace_wrap(bb['priority']['label']) if 'priority' and 'label' in bb else None  # 优先级
         start_time = replace_wrap(bb['start_time']) if 'start_time' in bb else None  # 创建时间
+
         owner = replace_wrap(bb['owner']) if 'owner' in bb else None  # 创建者
+        owner = str(owner).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ', '').replace('[',
+                                                                                                                  '').replace(
+            ']', '').split(',')
         owner = get_user_value_all(user_value, owner)
 
         watchers = replace_wrap(bb['watchers']) if 'watchers' in bb else None  # 关注人
+        watchers = str(watchers).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ', '').replace(
+            '[', '').replace(']', '').split(',')
         watchers = get_user_value_all(user_value, watchers)
 
         description = replace_wrap(bb['description']) if 'description' in bb else None  # 体验需求描述
-        business = replace_wrap(bb['business']['label']) if 'label' in bb else None  # 业务线
+        business = replace_wrap(bb['business']['label']) if 'business' and 'label' in bb else None  # 业务线
         owned_project = replace_wrap(bb['owned_project']) if 'owned_project' in bb else None  # 所属空间
         work_item_id = replace_wrap(bb['work_item_id']) if 'work_item_id' in bb else None  # 工作项id
+
         current_status_operator = replace_wrap(
             bb['current_status_operator']) if 'current_status_operator' in bb else None  # 当前负责人
+        current_status_operator = str(current_status_operator).replace('\'None', '').replace('None\'', '').replace('\'',
+                                                                                                                   '').replace(
+            ' ', '').replace('[', '').replace(']', '').split(',')
         current_status_operator = get_user_value_all(user_value, current_status_operator)
 
-        work_item_type_key = replace_wrap(bb['work_item_type_key']['label']) if 'label' in bb else None  # 工作项
+        work_item_type_key = replace_wrap(
+            bb['work_item_type_key']['label']) if 'work_item_type_key' and 'label' in bb else None  # 工作项
         finish_time = replace_wrap(bb['finish_time']) if 'finish_time' in bb else None  # 完成时间
-        work_item_status = replace_wrap(bb['work_item_status']['label']) if 'label' in bb else None  # 状态
-        field_693940 = replace_wrap(bb['field_693940']['label']) if 'label' in bb else None  # 软硬件协同
+        work_item_status = replace_wrap(
+            bb['work_item_status']['label']) if 'work_item_status' and 'label' in bb else None  # 状态
+        field_693940 = replace_wrap(bb['field_693940']['label']) if 'field_693940' and 'label' in bb else None  # 软硬件协同
         field_f29b07 = replace_wrap(bb['field_f29b07']) if 'field_f29b07' in bb else None  # VDR追踪
-        field_0b7e67 = replace_wrap(bb['field_0b7e67']['label']) if 'label' in bb else None  # 车型适用区域
-        field_950dc4 = replace_wrap(bb['field_950dc4']['label']) if 'label' in bb else None  # Leo 选装策略
-        field_20e79e = replace_wrap(bb['field_20e79e']['label']) if 'label' in bb else None  # Centaurus 选装策略
-        field_5f5851 = replace_wrap(bb['field_5f5851']['label']) if 'label' in bb else None  # Phoenix 选装策略
-        field_9b95ea = replace_wrap(bb['field_9b95ea']['label']) if 'label' in bb else None  # Sagitta 选装策略
-        field_384544 = replace_wrap(bb['field_384544']['label']) if 'label' in bb else None  # Perseus 选装策略
-        field_7e5bf5 = replace_wrap(bb['field_7e5bf5']['label']) if 'label' in bb else None  # Draco 选装策略
-        field_a86fff = replace_wrap(bb['field_a86fff']['label']) if 'label' in bb else None  # Hercules 选装策略
-        field_7b36c2 = replace_wrap(bb['field_7b36c2']['label']) if 'label' in bb else None  # Pisces 选装策略
-        field_54f49c = replace_wrap(bb['field_54f49c']['label']) if 'label' in bb else None  # Vega 选装策略
+        field_0b7e67 = replace_wrap(bb['field_0b7e67']['label']) if 'field_0b7e67' and 'label' in bb else None  # 车型适用区域
+        field_950dc4 = replace_wrap(
+            bb['field_950dc4']['label']) if 'field_950dc4' and 'label' in bb else None  # Leo 选装策略
+        field_20e79e = replace_wrap(
+            bb['field_20e79e']['label']) if 'field_20e79e' and 'label' in bb else None  # Centaurus 选装策略
+        field_5f5851 = replace_wrap(
+            bb['field_5f5851']['label']) if 'field_5f5851' and 'label' in bb else None  # Phoenix 选装策略
+        field_9b95ea = replace_wrap(
+            bb['field_9b95ea']['label']) if 'field_9b95ea' and 'label' in bb else None  # Sagitta 选装策略
+        field_384544 = replace_wrap(
+            bb['field_384544']['label']) if 'field_384544' and 'label' in bb else None  # Perseus 选装策略
+        field_7e5bf5 = replace_wrap(
+            bb['field_7e5bf5']['label']) if 'field_7e5bf5' and 'label' in bb else None  # Draco 选装策略
+        field_a86fff = replace_wrap(
+            bb['field_a86fff']['label']) if 'field_a86fff' and 'label' in bb else None  # Hercules 选装策略
+        field_7b36c2 = replace_wrap(
+            bb['field_7b36c2']['label']) if 'field_7b36c2' and 'label' in bb else None  # Pisces 选装策略
+        field_54f49c = replace_wrap(
+            bb['field_54f49c']['label']) if 'field_54f49c' and 'label' in bb else None  # Vega 选装策略
         field_3650f3 = replace_wrap(bb['field_3650f3']) if 'field_3650f3' in bb else None  # Leo take rate
         field_4383a0 = replace_wrap(bb['field_4383a0']) if 'field_4383a0' in bb else None  # Centaurus take rate
         field_028025 = replace_wrap(bb['field_028025']) if 'field_028025' in bb else None  # Phoenix take rate
@@ -425,8 +444,9 @@ def get_item_value(result, writer):
         field_16da83 = replace_wrap(bb['field_16da83']) if 'field_16da83' in bb else None  # Hercules take rate
         field_92ef9d = replace_wrap(bb['field_92ef9d']) if 'field_92ef9d' in bb else None  # Pisces take rate
         field_71b04d = replace_wrap(bb['field_71b04d']) if 'field_71b04d' in bb else None  # Vega take rate
-        field_609710 = replace_wrap(bb['field_609710']['label']) if 'label' in bb else None  # 整车平台策略
-        field_98b3eb = replace_wrap(bb['field_98b3eb']['label']) if 'label' in bb else None  # PD数字协作团队
+        field_609710 = replace_wrap(bb['field_609710']['label']) if 'field_609710' and 'label' in bb else None  # 整车平台策略
+        field_98b3eb = replace_wrap(
+            bb['field_98b3eb']['label']) if 'field_98b3eb' and 'label' in bb else None  # PD数字协作团队
         field_919365 = replace_wrap(bb['field_919365']) if 'field_919365' in bb else None  # PETS一级体验维度
         field_e80907 = replace_wrap(bb['field_e80907']) if 'field_e80907' in bb else None  # PETS二级体验维度
         field_c3ba8b = replace_wrap(bb['field_c3ba8b']) if 'field_c3ba8b' in bb else None  # PETS三级体验维度
@@ -434,34 +454,48 @@ def get_item_value(result, writer):
         field_478e51 = replace_wrap(bb['field_478e51']) if 'field_478e51' in bb else None  # 建议的需求方案
         field_fae060 = replace_wrap(bb['field_fae060']) if 'field_fae060' in bb else None  # 关联的体验需求
         field_f65322 = replace_wrap(bb['field_f65322']) if 'field_f65322' in bb else None  # 交付车型
-        field_889457 = replace_wrap(bb['field_889457']['label']) if 'label' in bb else None  # 首发车型
-        field_2e2be1 = replace_wrap(bb['field_2e2be1']['label']) if 'label' in bb else None  # Gemini G1.3 选装策略
-        field_295df1 = replace_wrap(bb['field_295df1']['label']) if 'label' in bb else None  # Orion G1.2 选装策略
-        field_6647e5 = replace_wrap(bb['field_6647e5']['label']) if 'label' in bb else None  # Pegasus G1.2 选装策略
-        field_728f95 = replace_wrap(bb['field_728f95']['label']) if 'label' in bb else None  # Force G1.F 选装策略
-        field_f75f76 = replace_wrap(bb['field_f75f76']['label']) if 'label' in bb else None  # Force G1.3 选装策略
-        field_e70224 = replace_wrap(bb['field_e70224']['label']) if 'label' in bb else None  # Libra G1.1 选装策略
-        field_29fb34 = replace_wrap(bb['field_29fb34']['label']) if 'label' in bb else None  # Lyra G1.1 选装策略
-        field_0c5a16 = replace_wrap(bb['field_0c5a16']['label']) if 'label' in bb else None  # Sirius G1.1 选装策略
-        field_97e739 = replace_wrap(bb['field_97e739']['label']) if 'label' in bb else None  # Gemini G1.1 选装策略
-        field_ad5928 = replace_wrap(bb['field_ad5928']['label']) if 'label' in bb else None  # Pegasus G1.1 选装策略
-        field_b482f9 = replace_wrap(bb['field_b482f9']['label']) if 'label' in bb else None  # Force G1.1 选装策略
-        field_030e59 = replace_wrap(bb['field_030e59']['label']) if 'label' in bb else None  # Aries G1.1 选装策略
-        field_29f769 = replace_wrap(bb['field_29f769']['label']) if 'label' in bb else None  # 选装包
+        field_889457 = replace_wrap(bb['field_889457']['label']) if 'field_889457' and 'label' in bb else None  # 首发车型
+        field_2e2be1 = replace_wrap(
+            bb['field_2e2be1']['label']) if 'field_2e2be1' and 'label' in bb else None  # Gemini G1.3 选装策略
+        field_295df1 = replace_wrap(
+            bb['field_295df1']['label']) if 'field_295df1' and 'label' in bb else None  # Orion G1.2 选装策略
+        field_6647e5 = replace_wrap(
+            bb['field_6647e5']['label']) if 'field_6647e5' and 'label' in bb else None  # Pegasus G1.2 选装策略
+        field_728f95 = replace_wrap(
+            bb['field_728f95']['label']) if 'field_728f95' and 'label' in bb else None  # Force G1.F 选装策略
+        field_f75f76 = replace_wrap(
+            bb['field_f75f76']['label']) if 'field_f75f76' and 'label' in bb else None  # Force G1.3 选装策略
+        field_e70224 = replace_wrap(
+            bb['field_e70224']['label']) if 'field_e70224' and 'label' in bb else None  # Libra G1.1 选装策略
+        field_29fb34 = replace_wrap(
+            bb['field_29fb34']['label']) if 'field_29fb34' and 'label' in bb else None  # Lyra G1.1 选装策略
+        field_0c5a16 = replace_wrap(
+            bb['field_0c5a16']['label']) if 'field_0c5a16' and 'label' in bb else None  # Sirius G1.1 选装策略
+        field_97e739 = replace_wrap(
+            bb['field_97e739']['label']) if 'field_97e739' and 'label' in bb else None  # Gemini G1.1 选装策略
+        field_ad5928 = replace_wrap(
+            bb['field_ad5928']['label']) if 'field_ad5928' and 'label' in bb else None  # Pegasus G1.1 选装策略
+        field_b482f9 = replace_wrap(
+            bb['field_b482f9']['label']) if 'field_b482f9' and 'label' in bb else None  # Force G1.1 选装策略
+        field_030e59 = replace_wrap(
+            bb['field_030e59']['label']) if 'field_030e59' and 'label' in bb else None  # Aries G1.1 选装策略
+        field_29f769 = replace_wrap(bb['field_29f769']['label']) if 'field_29f769' and 'label' in bb else None  # 选装包
         field_f7a203 = replace_wrap(bb['field_f7a203']) if 'field_f7a203' in bb else None  # R1评审意见
         field_d1563b = replace_wrap(bb['field_d1563b']) if 'field_d1563b' in bb else None  # R2评审意见
-        field_e941bf = replace_wrap(bb['field_e941bf']['label']) if 'label' in bb else None  # R2 评审会议
-        field_b2cc34 = replace_wrap(bb['field_b2cc34']['label']) if 'label' in bb else None  # R1 评审会议
-        tags = replace_wrap(bb['tags']['label']) if 'label' in bb else None  # 标签
-        field_023d10 = replace_wrap(bb['field_023d10']['label']) if 'label' in bb else None  # 长周期件
+        field_e941bf = replace_wrap(
+            bb['field_e941bf']['label']) if 'field_e941bf' and 'label' in bb else None  # R2 评审会议
+        field_b2cc34 = replace_wrap(
+            bb['field_b2cc34']['label']) if 'field_b2cc34' and 'label' in bb else None  # R1 评审会议
+        tags = replace_wrap(bb['tags']['label']) if 'tags' and 'label' in bb else None  # 标签
+        field_023d10 = replace_wrap(bb['field_023d10']['label']) if 'field_023d10' and 'label' in bb else None  # 长周期件
         field_bb2170 = replace_wrap(bb['field_bb2170']) if 'field_bb2170' in bb else None  # 所属核心体验
         field_bd0076 = replace_wrap(bb['field_bd0076']) if 'field_bd0076' in bb else None  # 所属体验目标
-        field_920e01 = replace_wrap(bb['field_920e01']['label']) if 'label' in bb else None  # 预算审批会议
+        field_920e01 = replace_wrap(bb['field_920e01']['label']) if 'field_920e01' and 'label' in bb else None  # 预算审批会议
         field_afd864 = replace_wrap(bb['field_afd864']) if 'field_afd864' in bb else None  # R2.5评审意见
         field_2d9270 = replace_wrap(bb['field_2d9270']) if 'field_2d9270' in bb else None  # 车型需求描述
-        field_89c432 = replace_wrap(bb['field_89c432']['label']) if 'label' in bb else None  # 平台标签
+        field_89c432 = replace_wrap(bb['field_89c432']['label']) if 'field_89c432' and 'label' in bb else None  # 平台标签
         field_22c608 = replace_wrap(bb['field_22c608']) if 'field_22c608' in bb else None  # 竞品车型
-        field_b21efa = replace_wrap(bb['field_b21efa']['label']) if 'label' in bb else None  # 批量触发
+        field_b21efa = replace_wrap(bb['field_b21efa']['label']) if 'field_b21efa' and 'label' in bb else None  # 批量触发
         field_4f29f4 = replace_wrap(bb['field_4f29f4']) if 'field_4f29f4' in bb else None  # 车型需求文档
         wsd.append([id, name, template, priority, start_time, owner, watchers, description, business, owned_project,
                     work_item_id, current_status_operator, work_item_type_key, finish_time, work_item_status,
@@ -506,29 +540,27 @@ def get_item_value(result, writer):
 
 
 if __name__ == '__main__':
-
-    # a = [get_work_item_query(), get_project_name()]
-    # # print(a)
-    # # 需要设置csv格式编码,不然后面写入有可能报错
-    # csv_name = 'feishu_hive_hf.csv'
-    # csvfile = open(csv_name, 'w', newline='', encoding='utf-8-sig')  # python3下
-    # writer = csv.writer(csvfile, delimiter='^')
-    # # 后面需要新建一个表
-    # table_name = 'dop_plm_myplm_prod.ods_ipd_vehicle_demand_feishu_to_hive_hf'
-    # # a=get_item_value()
-    # # print(a)
+    a = [get_work_item_query(), get_project_name()]
+    # print(a)
+    # 需要设置csv格式编码,不然后面写入有可能报错
+    csv_name = 'feishu_hive_hf.csv'
+    csvfile = open(csv_name, 'w', newline='', encoding='utf-8-sig')  # python3下
+    writer = csv.writer(csvfile, delimiter='^')
+    # 后面需要新建一个表
+    table_name = 'dop_plm_myplm_prod.ods_ipd_vehicle_demand_feishu_to_hive_hf'
+    # a=get_item_value()
+    # print(a)
     result = get_work_item_query()
-    get_users_all(result)
-    # get_item_value(result=result, writer=writer)
-    #
-    # csvfile.close()
-    #
-    # # 打开CSV文件
-    # with open('feishu_hive_hf.csv', 'r') as file:
-    #     # 创建CSV读取器
-    #     csv_reader = csv.reader(file)
-    #
-    #     # 逐行读取并打印CSV文件内容
-    #     for row in csv_reader:
-    #         print(row)
-    # hive_load_table(table_name, csv_name)
+    get_item_value(result=result, writer=writer)
+
+    csvfile.close()
+
+    # 打开CSV文件
+    with open('feishu_hive_hf.csv', 'r') as file:
+        # 创建CSV读取器
+        csv_reader = csv.reader(file)
+
+        # 逐行读取并打印CSV文件内容
+        for row in csv_reader:
+            print(row)
+    hive_load_table(table_name, csv_name)
