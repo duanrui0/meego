@@ -64,16 +64,16 @@ def get_version_list():
     header = get_header()
     body = json.dumps({
         "project_key": "63f71b3c504623c16c7fbce2",
-        "work_item_type_key": "649aaf06998b267124f3fb52",
-        # 通过调接口知道‘全部需求’在page_num = 2的地方
-        "page_num": 2
+        "work_item_type_key": "62e7c97b7712a022a6280af2",
+        # 通过调接口知道‘全部型谱’在page_num = 2的地方
+        "page_num": 1
     })
     result = requests.request('POST', url, headers=header, data=body)
     data = json.loads(result.text)
     data = data['data']
     list = []
     for re in data:
-        if re['name'] == '全部需求':
+        if re['name'] == '全部型谱':
             list.append(re['view_id'])
 
     return list
@@ -195,7 +195,7 @@ def get_work_item_query():
     batch_size = 50
 
     result = process_data(data, batch_size)
-    url = "https://project.feishu.cn/open_api/63f71b3c504623c16c7fbce2/work_item/649aaf06998b267124f3fb52/query?project_key=63f71b3c504623c16c7fbce2&work_item_type_key=649aaf06998b267124f3fb52"
+    url = "https://project.feishu.cn/open_api/63f71b3c504623c16c7fbce2/work_item/62e7c97b7712a022a6280af2/query?project_key=63f71b3c504623c16c7fbce2&work_item_type_key=62e7c97b7712a022a6280af2"
     header = get_header()
     for i in result:
         # 取出当前批次的数据
@@ -216,10 +216,13 @@ def get_work_item_query():
             work_name = item['name']
             fields = item['fields']
             work_name11 = 'name'
+            work_item_status11 = 'work_item_status'
+            work_item_status = item['work_item_status']['state_key']
+
             json_data = {}
             json_data[work_id11] = work_id
             json_data[work_name11] = work_name
-
+            json_data[work_item_status11] = work_item_status
             for item2 in fields:
                 field_key = item2['field_key']
                 field_value = item2['field_value']
@@ -243,7 +246,7 @@ def get_project_name():
     header = get_header()
     body = json.dumps({
         "project_key": "63f71b3c504623c16c7fbce2",
-        "work_item_type_key": "649aaf06998b267124f3fb52"
+        "work_item_type_key": "62e7c97b7712a022a6280af2"
     })
     result = requests.request('POST', url, headers=header, data=body)
     # data = result
@@ -266,12 +269,12 @@ def get_project_name():
 
 
 # 7.获取空间字段中的多选字段键值对
-def get_project_option_name():
+def get_project_option_name(a):
     url = 'https://project.feishu.cn/open_api/63f71b3c504623c16c7fbce2/field/all'
     header = get_header()
     body = json.dumps({
         "project_key": "63f71b3c504623c16c7fbce2",
-        "work_item_type_key": "649aaf06998b267124f3fb52"
+        "work_item_type_key": "62e7c97b7712a022a6280af2"
     })
     result = requests.request('POST', url, headers=header, data=body)
     # data = result
@@ -288,8 +291,8 @@ def get_project_option_name():
             options = item['options']
             for opt in options:
                 option_key_name[opt['value']] = opt['label']
-
-    return option_key_name
+    result = option_key_name[a]
+    return result
 
 
 # 8.获取空间字段中的人员键值对
@@ -334,7 +337,32 @@ def replace_wrap(field):
             print(field1)'''
     return field1
 
-
+# 10. 获取流程角色配置详情
+def get_user_perpores():
+    url = 'https://project.feishu.cn/open_api/63f71b3c504623c16c7fbce2/flow_roles/62e7c97b7712a022a6280af2'
+    header = get_header()
+    body = json.dumps({
+        "project_key": "63f71b3c504623c16c7fbce2",
+        "work_item_type_key": "62e7c97b7712a022a6280af2"
+    })
+    result = requests.request('GET', url, headers=header, data=body)
+    data = json.loads(result.text)
+    option_key_name = {}
+    for user_info in data['data']:
+        name_cn = user_info['id']  # 角色key
+        username = user_info['name']  # 角色name
+        option_key_name[username] = name_cn  # 将角色key和name组成键值对加入结果字典
+    return option_key_name
+# 11. 获取空间下工作项类型
+def get_item_type():
+    url='https://project.feishu.cn/open_api/63f71b3c504623c16c7fbce2/work_item/all-types'
+    header = get_header()
+    body = json.dumps({
+        "project_key": "63f71b3c504623c16c7fbce2"
+    })
+    result = requests.request('GET', url, headers=header, data=body)
+    data = json.loads(result.text)
+    return data
 # 将数据写入csv
 def hive_load_table(table_name, csv_name):
     # 分区字段
@@ -352,7 +380,7 @@ def hive_load_table(table_name, csv_name):
 def get_item_value(result, writer):
     # 获取field_name对应的具体field_key
     data = get_project_name()
-    option_data = get_project_option_name()
+    # option_data = get_project_option_name()
     # 获取空间字段
     result_keys = [key for key, value in data.items()]
     # print(result_keys)
@@ -381,186 +409,187 @@ def get_item_value(result, writer):
         #     [id,name,business,field_9caa40,field_69ca92,field_54bd08,field_ef3e43,field_da6062,field_16605a]
         #     )
         id = bb['id']
-        name = replace_wrap(bb['name']) if 'name' in bb else None  # 车型需求名称
-        template = replace_wrap(bb['template']['label']) if 'template' and 'label' in bb else None  # 车型需求审批流程
-        priority = replace_wrap(bb['priority']['label']) if 'priority' and 'label' in bb else None  # 优先级
-        start_time = replace_wrap(bb['start_time']) if 'start_time' in bb else None  # 创建时间
+        archiving_date = replace_wrap(bb['archiving_date']) if 'archiving_date' in bb and bb[
+            'archiving_date'] is not None else None  # 归档日期
 
-        owner = replace_wrap(bb['owner']) if 'owner' in bb else None  # 创建者
-        owner = str(owner).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ', '').replace('[',
-                                                                                                                  '').replace(
-            ']', '').split(',')
-        owner = get_user_value_all(user_value, owner)
-
-        watchers = replace_wrap(bb['watchers']) if 'watchers' in bb else None  # 关注人
-        watchers = str(watchers).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ', '').replace(
+        deleted_by = replace_wrap(bb['deleted_by']) if 'deleted_by' in bb and bb[
+            'deleted_by'] is not None else None  # 删除人
+        deleted_by = str(deleted_by).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ',
+                                                                                                           '').replace(
             '[', '').replace(']', '').split(',')
-        watchers = get_user_value_all(user_value, watchers)
+        deleted_by = get_user_value_all(user_value, deleted_by)
 
-        description = replace_wrap(bb['description']) if 'description' in bb else None  # 体验需求描述
-        business = replace_wrap(bb['business']['label']) if 'business' and 'label' in bb else None  # 业务线
-        owned_project = replace_wrap(bb['owned_project']) if 'owned_project' in bb else None  # 所属空间
-        work_item_id = replace_wrap(bb['work_item_id']) if 'work_item_id' in bb else None  # 工作项id
+        archiving_status = replace_wrap(bb['archiving_status']) if 'archiving_status' in bb and bb[
+            'archiving_status'] is not None else None  # 是否归档
+        business = replace_wrap(bb['business']['label']) if 'business' in bb and bb[
+            'business'] is not None and 'label' in bb['business'] else None  # 业务线
 
-        current_status_operator = replace_wrap(
-            bb['current_status_operator']) if 'current_status_operator' in bb else None  # 当前负责人
+        current_status_operator = replace_wrap(bb['current_status_operator']) if 'current_status_operator' in bb and bb[
+            'current_status_operator'] is not None else None  # 当前负责人
         current_status_operator = str(current_status_operator).replace('\'None', '').replace('None\'', '').replace('\'',
                                                                                                                    '').replace(
             ' ', '').replace('[', '').replace(']', '').split(',')
         current_status_operator = get_user_value_all(user_value, current_status_operator)
 
-        work_item_type_key = replace_wrap(
-            bb['work_item_type_key']['label']) if 'work_item_type_key' and 'label' in bb else None  # 工作项
-        finish_time = replace_wrap(bb['finish_time']) if 'finish_time' in bb else None  # 完成时间
-        work_item_status = replace_wrap(
-            bb['work_item_status']['label']) if 'work_item_status' and 'label' in bb else None  # 状态
-        field_693940 = replace_wrap(bb['field_693940']['label']) if 'field_693940' and 'label' in bb else None  # 软硬件协同
-        field_f29b07 = replace_wrap(bb['field_f29b07']) if 'field_f29b07' in bb else None  # VDR追踪
-        field_0b7e67 = replace_wrap(bb['field_0b7e67']['label']) if 'field_0b7e67' and 'label' in bb else None  # 车型适用区域
-        field_950dc4 = replace_wrap(
-            bb['field_950dc4']['label']) if 'field_950dc4' and 'label' in bb else None  # Leo 选装策略
-        field_20e79e = replace_wrap(
-            bb['field_20e79e']['label']) if 'field_20e79e' and 'label' in bb else None  # Centaurus 选装策略
-        field_5f5851 = replace_wrap(
-            bb['field_5f5851']['label']) if 'field_5f5851' and 'label' in bb else None  # Phoenix 选装策略
-        field_9b95ea = replace_wrap(
-            bb['field_9b95ea']['label']) if 'field_9b95ea' and 'label' in bb else None  # Sagitta 选装策略
-        field_384544 = replace_wrap(
-            bb['field_384544']['label']) if 'field_384544' and 'label' in bb else None  # Perseus 选装策略
-        field_7e5bf5 = replace_wrap(
-            bb['field_7e5bf5']['label']) if 'field_7e5bf5' and 'label' in bb else None  # Draco 选装策略
-        field_a86fff = replace_wrap(
-            bb['field_a86fff']['label']) if 'field_a86fff' and 'label' in bb else None  # Hercules 选装策略
-        field_7b36c2 = replace_wrap(
-            bb['field_7b36c2']['label']) if 'field_7b36c2' and 'label' in bb else None  # Pisces 选装策略
-        field_54f49c = replace_wrap(
-            bb['field_54f49c']['label']) if 'field_54f49c' and 'label' in bb else None  # Vega 选装策略
-        field_3650f3 = replace_wrap(bb['field_3650f3']) if 'field_3650f3' in bb else None  # Leo take rate
-        field_4383a0 = replace_wrap(bb['field_4383a0']) if 'field_4383a0' in bb else None  # Centaurus take rate
-        field_028025 = replace_wrap(bb['field_028025']) if 'field_028025' in bb else None  # Phoenix take rate
-        field_84c89b = replace_wrap(bb['field_84c89b']) if 'field_84c89b' in bb else None  # Sagitta take rate
-        field_dfeb1a = replace_wrap(bb['field_dfeb1a']) if 'field_dfeb1a' in bb else None  # Perseus take rate
-        field_aa38f7 = replace_wrap(bb['field_aa38f7']) if 'field_aa38f7' in bb else None  # Draco take rate
-        field_16da83 = replace_wrap(bb['field_16da83']) if 'field_16da83' in bb else None  # Hercules take rate
-        field_92ef9d = replace_wrap(bb['field_92ef9d']) if 'field_92ef9d' in bb else None  # Pisces take rate
-        field_71b04d = replace_wrap(bb['field_71b04d']) if 'field_71b04d' in bb else None  # Vega take rate
-        field_609710 = replace_wrap(bb['field_609710']['label']) if 'field_609710' and 'label' in bb else None  # 整车平台策略
-        field_98b3eb = replace_wrap(
-            bb['field_98b3eb']['label']) if 'field_98b3eb' and 'label' in bb else None  # PD数字协作团队
-        field_919365 = replace_wrap(bb['field_919365']) if 'field_919365' in bb else None  # PETS一级体验维度
-        field_e80907 = replace_wrap(bb['field_e80907']) if 'field_e80907' in bb else None  # PETS二级体验维度
-        field_c3ba8b = replace_wrap(bb['field_c3ba8b']) if 'field_c3ba8b' in bb else None  # PETS三级体验维度
-        field_e29d7a = replace_wrap(bb['field_e29d7a']) if 'field_e29d7a' in bb else None  # 体验需求文档
-        field_478e51 = replace_wrap(bb['field_478e51']) if 'field_478e51' in bb else None  # 建议的需求方案
-        field_fae060 = replace_wrap(bb['field_fae060']) if 'field_fae060' in bb else None  # 关联的体验需求
-        field_f65322 = replace_wrap(bb['field_f65322']) if 'field_f65322' in bb else None  # 交付车型
-        field_889457 = replace_wrap(bb['field_889457']['label']) if 'field_889457' and 'label' in bb else None  # 首发车型
-        field_2e2be1 = replace_wrap(
-            bb['field_2e2be1']['label']) if 'field_2e2be1' and 'label' in bb else None  # Gemini G1.3 选装策略
-        field_295df1 = replace_wrap(
-            bb['field_295df1']['label']) if 'field_295df1' and 'label' in bb else None  # Orion G1.2 选装策略
-        field_6647e5 = replace_wrap(
-            bb['field_6647e5']['label']) if 'field_6647e5' and 'label' in bb else None  # Pegasus G1.2 选装策略
-        field_728f95 = replace_wrap(
-            bb['field_728f95']['label']) if 'field_728f95' and 'label' in bb else None  # Force G1.F 选装策略
-        field_f75f76 = replace_wrap(
-            bb['field_f75f76']['label']) if 'field_f75f76' and 'label' in bb else None  # Force G1.3 选装策略
-        field_e70224 = replace_wrap(
-            bb['field_e70224']['label']) if 'field_e70224' and 'label' in bb else None  # Libra G1.1 选装策略
-        field_29fb34 = replace_wrap(
-            bb['field_29fb34']['label']) if 'field_29fb34' and 'label' in bb else None  # Lyra G1.1 选装策略
-        field_0c5a16 = replace_wrap(
-            bb['field_0c5a16']['label']) if 'field_0c5a16' and 'label' in bb else None  # Sirius G1.1 选装策略
-        field_97e739 = replace_wrap(
-            bb['field_97e739']['label']) if 'field_97e739' and 'label' in bb else None  # Gemini G1.1 选装策略
-        field_ad5928 = replace_wrap(
-            bb['field_ad5928']['label']) if 'field_ad5928' and 'label' in bb else None  # Pegasus G1.1 选装策略
-        field_b482f9 = replace_wrap(
-            bb['field_b482f9']['label']) if 'field_b482f9' and 'label' in bb else None  # Force G1.1 选装策略
-        field_030e59 = replace_wrap(
-            bb['field_030e59']['label']) if 'field_030e59' and 'label' in bb else None  # Aries G1.1 选装策略
-        field_29f769 = replace_wrap(bb['field_29f769']['label']) if 'field_29f769' and 'label' in bb else None  # 选装包
-        field_f7a203 = replace_wrap(bb['field_f7a203']) if 'field_f7a203' in bb else None  # R1评审意见
-        field_d1563b = replace_wrap(bb['field_d1563b']) if 'field_d1563b' in bb else None  # R2评审意见
-        field_e941bf = replace_wrap(
-            bb['field_e941bf']['label']) if 'field_e941bf' and 'label' in bb else None  # R2 评审会议
-        field_b2cc34 = replace_wrap(
-            bb['field_b2cc34']['label']) if 'field_b2cc34' and 'label' in bb else None  # R1 评审会议
-        tags = replace_wrap(bb['tags']['label']) if 'tags' and 'label' in bb else None  # 标签
-        field_023d10 = replace_wrap(bb['field_023d10']['label']) if 'field_023d10' and 'label' in bb else None  # 长周期件
-        field_bb2170 = replace_wrap(bb['field_bb2170']) if 'field_bb2170' in bb else None  # 所属核心体验
-        field_bd0076 = replace_wrap(bb['field_bd0076']) if 'field_bd0076' in bb else None  # 所属体验目标
-        field_920e01 = replace_wrap(bb['field_920e01']['label']) if 'field_920e01' and 'label' in bb else None  # 预算审批会议
-        field_afd864 = replace_wrap(bb['field_afd864']) if 'field_afd864' in bb else None  # R2.5评审意见
-        field_2d9270 = replace_wrap(bb['field_2d9270']) if 'field_2d9270' in bb else None  # 车型需求描述
-        field_89c432 = replace_wrap(bb['field_89c432']['label']) if 'field_89c432' and 'label' in bb else None  # 平台标签
-        field_22c608 = replace_wrap(bb['field_22c608']) if 'field_22c608' in bb else None  # 竞品车型
-        field_b21efa = replace_wrap(bb['field_b21efa']['label']) if 'field_b21efa' and 'label' in bb else None  # 批量触发
-        field_4f29f4 = replace_wrap(bb['field_4f29f4']) if 'field_4f29f4' in bb else None  # 车型需求文档
-        wsd.append([id, name, template, priority, start_time, owner, watchers, description, business, owned_project,
-                    work_item_id, current_status_operator, work_item_type_key, finish_time, work_item_status,
-                    field_693940, field_f29b07, field_0b7e67, field_950dc4, field_20e79e, field_5f5851, field_9b95ea,
-                    field_384544, field_7e5bf5, field_a86fff, field_7b36c2, field_54f49c, field_3650f3, field_4383a0,
-                    field_028025, field_84c89b, field_dfeb1a, field_aa38f7, field_16da83, field_92ef9d, field_71b04d,
-                    field_609710, field_98b3eb, field_919365, field_e80907, field_c3ba8b, field_e29d7a, field_478e51,
-                    field_fae060, field_f65322, field_889457, field_2e2be1, field_295df1, field_6647e5, field_728f95,
-                    field_f75f76, field_e70224, field_29fb34, field_0c5a16, field_97e739, field_ad5928, field_b482f9,
-                    field_030e59, field_29f769, field_f7a203, field_d1563b, field_e941bf, field_b2cc34, tags,
-                    field_023d10, field_bb2170, field_bd0076, field_920e01, field_afd864, field_2d9270, field_89c432,
-                    field_22c608, field_b21efa, field_4f29f4])
+        current_status_operator_role = replace_wrap(
+            bb['current_status_operator_role']['label']) if 'current_status_operator_role' in bb and bb[
+            'current_status_operator_role'] is not None and 'label' in bb[
+                                                                'current_status_operator_role'] else None  # 当前状态授权角色
+        deleted_at = replace_wrap(bb['deleted_at']) if 'deleted_at' in bb and bb[
+            'deleted_at'] is not None else None  # 删除时间
+        description = replace_wrap(bb['description']) if 'description' in bb and bb[
+            'description'] is not None else None  # 描述
+        finish_time = replace_wrap(bb['finish_time']) if 'finish_time' in bb and bb[
+            'finish_time'] is not None else None  # 完成时间
+        priority = replace_wrap(bb['priority']['label']) if 'priority' in bb and bb[
+            'priority'] is not None and 'label' in bb['priority'] else None  # 优先级
+        name = replace_wrap(bb['name']) if 'name' in bb and bb['name'] is not None else None  # 车款
+        owned_project = replace_wrap(bb['owned_project']) if 'owned_project' in bb and bb[
+            'owned_project'] is not None else None  # 所属空间
+
+        owner = replace_wrap(bb['owner']) if 'owner' in bb and bb['owner'] is not None else None  # 创建者
+        owner = str(owner).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ', '').replace('[',
+                                                                                                                  '').replace(
+            ']', '').split(',')
+        owner = get_user_value_all(user_value, owner)
+
+        tags = replace_wrap(bb['tags']['label']) if 'tags' in bb and bb['tags'] is not None and 'label' in bb[
+            'tags'] else None  # 标签
+        start_time = replace_wrap(bb['start_time']) if 'start_time' in bb and bb[
+            'start_time'] is not None else None  # 提出时间
+        template = replace_wrap(bb['template']['label']) if 'template' in bb and bb[
+            'template'] is not None and 'label' in bb['template'] else None  # 工作项类型
+
+        updated_by = replace_wrap(bb['updated_by']) if 'updated_by' in bb and bb[
+            'updated_by'] is not None else None  # 更新人
+        updated_by = str(updated_by).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ',
+                                                                                                           '').replace(
+            '[', '').replace(']', '').split(',')
+        updated_by = get_user_value_all(user_value, updated_by)
+
+        updated_at = replace_wrap(bb['updated_at']) if 'updated_at' in bb and bb[
+            'updated_at'] is not None else None  # 更新时间
+
+        watchers = replace_wrap(bb['watchers']) if 'watchers' in bb and bb['watchers'] is not None else None  # 关注人
+        watchers = str(watchers).replace('\'None', '').replace('None\'', '').replace('\'', '').replace(' ', '').replace(
+            '[', '').replace(']', '').split(',')
+        watchers = get_user_value_all(user_value, watchers)
+
+        work_item_id = replace_wrap(bb['work_item_id']) if 'work_item_id' in bb and bb[
+            'work_item_id'] is not None else None  # 工作项id
+        work_item_status = replace_wrap(bb['work_item_status']['label']) if 'work_item_status' in bb and bb[
+            'work_item_status'] is not None and 'label' in bb['work_item_status'] else None  # 当前节点
+        work_item_type_key = replace_wrap(bb['work_item_type_key']['label']) if 'work_item_type_key' in bb and bb[
+            'work_item_type_key'] is not None and 'label' in bb['work_item_type_key'] else None  # 工作项
+        field_f41d15 = replace_wrap(bb['field_f41d15']) if 'field_f41d15' in bb and bb[
+            'field_f41d15'] is not None else None  # 备注
+        field_2370b4 = replace_wrap(bb['field_2370b4']) if 'field_2370b4' in bb and bb[
+            'field_2370b4'] is not None else None  # 相关软件版本
+        field_ab5b49 = replace_wrap(bb['field_ab5b49']) if 'field_ab5b49' in bb and bb[
+            'field_ab5b49'] is not None else None  # 车型
+        field_bb1111 = replace_wrap(bb['field_bb1111']) if 'field_bb1111' in bb and bb[
+            'field_bb1111'] is not None else None  # 车型项目
+        field_160c55 = replace_wrap(bb['field_160c55']['label']) if 'field_160c55' in bb and bb[
+            'field_160c55'] is not None and 'label' in bb['field_160c55'] else None  # 改款
+        field_f8daf8 = replace_wrap(bb['field_f8daf8']) if 'field_f8daf8' in bb and bb[
+            'field_f8daf8'] is not None else None  # 商业计划书
+        field_87aa82 = replace_wrap(bb['field_87aa82']['label']) if 'field_87aa82' in bb and bb[
+            'field_87aa82'] is not None and 'label' in bb['field_87aa82'] else None  # 物理平台
+        field_6f3723 = replace_wrap(bb['field_6f3723']['label']) if 'field_6f3723' in bb and bb[
+            'field_6f3723'] is not None and 'label' in bb['field_6f3723'] else None  # 销售区域
+        field_589d18 = replace_wrap(bb['field_589d18']) if 'field_589d18' in bb and bb[
+            'field_589d18'] is not None else None  # 整车参数
+        field_eae953 = replace_wrap(bb['field_eae953']) if 'field_eae953' in bb and bb[
+            'field_eae953'] is not None else None  # KO节点时间
+        field_249961 = replace_wrap(bb['field_249961']) if 'field_249961' in bb and bb[
+            'field_249961'] is not None else None  # G1节点时间
+        field_3f7cb2 = replace_wrap(bb['field_3f7cb2']) if 'field_3f7cb2' in bb and bb[
+            'field_3f7cb2'] is not None else None  # G2节点时间
+        field_b5519e = replace_wrap(bb['field_b5519e']) if 'field_b5519e' in bb and bb[
+            'field_b5519e'] is not None else None  # G3节点时间
+        field_b96d04 = replace_wrap(bb['field_b96d04']) if 'field_b96d04' in bb and bb[
+            'field_b96d04'] is not None else None  # G4节点时间
+        field_219299 = replace_wrap(bb['field_219299']) if 'field_219299' in bb and bb[
+            'field_219299'] is not None else None  # G5节点时间
+        field_7d3046 = replace_wrap(bb['field_7d3046']) if 'field_7d3046' in bb and bb[
+            'field_7d3046'] is not None else None  # G6节点时间
+        field_413642 = replace_wrap(bb['field_413642']) if 'field_413642' in bb and bb[
+            'field_413642'] is not None else None  # G7节点时间
+        field_09f15d = replace_wrap(bb['field_09f15d']) if 'field_09f15d' in bb and bb[
+            'field_09f15d'] is not None else None  # G0节点时间
+        field_73d52f = replace_wrap(bb['field_73d52f']) if 'field_73d52f' in bb and bb[
+            'field_73d52f'] is not None else None  # G8节点时间
+        field_a77c02 = replace_wrap(bb['field_a77c02']) if 'field_a77c02' in bb and bb[
+            'field_a77c02'] is not None else None  # G5.5节点时间
+        field_2208b5 = replace_wrap(bb['field_2208b5']) if 'field_2208b5' in bb and bb[
+            'field_2208b5'] is not None else None  # G6.5节点时间
+        field_450169 = replace_wrap(bb['field_450169']['label']) if 'field_450169' in bb and bb[
+            'field_450169'] is not None and 'label' in bb['field_450169'] else None  # 车系
+        field_d5640f = replace_wrap(bb['field_d5640f']['label']) if 'field_d5640f' in bb and bb[
+            'field_d5640f'] is not None and 'label' in bb['field_d5640f'] else None  # 下一个节点
+        field_d37ca2 = replace_wrap(bb['field_d37ca2']['label']) if 'field_d37ca2' in bb and bb[
+            'field_d37ca2'] is not None and 'label' in bb['field_d37ca2'] else None  # 软件平台
+        field_2a7b75 = replace_wrap(bb['field_2a7b75']) if 'field_2a7b75' in bb and bb[
+            'field_2a7b75'] is not None else None  # 相关周期规划
+        field_7f1c99 = replace_wrap(bb['field_7f1c99']) if 'field_7f1c99' in bb and bb[
+            'field_7f1c99'] is not None else None  # 车型Jira映射字段
+        role_owners = replace_wrap(bb['role_owners']) if 'role_owners' in bb and bb[
+            'role_owners'] is not None else None  # 车型Jira映射字段
+
+        wsd.append([id, archiving_date, deleted_by, archiving_status, business, current_status_operator,
+                    current_status_operator_role, deleted_at, description, finish_time, priority, name, owned_project,
+                    owner, tags, start_time, template, updated_by, updated_at, watchers, work_item_id, work_item_status,
+                    work_item_type_key, field_f41d15, field_2370b4, field_ab5b49, field_bb1111, field_160c55,
+                    field_f8daf8, field_87aa82, field_6f3723, field_589d18, field_eae953, field_249961, field_3f7cb2,
+                    field_b5519e, field_b96d04, field_219299, field_7d3046, field_413642, field_09f15d, field_73d52f,
+                    field_a77c02, field_2208b5, field_450169, field_d5640f, field_d37ca2, field_2a7b75, field_7f1c99])
         current_time = datetime.now()
-        print([id, name, template, priority, start_time, owner, watchers, description, business, owned_project,
-               work_item_id, current_status_operator, work_item_type_key, finish_time, work_item_status, field_693940,
-               field_f29b07, field_0b7e67, field_950dc4, field_20e79e, field_5f5851, field_9b95ea, field_384544,
-               field_7e5bf5, field_a86fff, field_7b36c2, field_54f49c, field_3650f3, field_4383a0, field_028025,
-               field_84c89b, field_dfeb1a, field_aa38f7, field_16da83, field_92ef9d, field_71b04d, field_609710,
-               field_98b3eb, field_919365, field_e80907, field_c3ba8b, field_e29d7a, field_478e51, field_fae060,
-               field_f65322, field_889457, field_2e2be1, field_295df1, field_6647e5, field_728f95, field_f75f76,
-               field_e70224, field_29fb34, field_0c5a16, field_97e739, field_ad5928, field_b482f9, field_030e59,
-               field_29f769, field_f7a203, field_d1563b, field_e941bf, field_b2cc34, tags, field_023d10, field_bb2170,
-               field_bd0076, field_920e01, field_afd864, field_2d9270, field_89c432, field_22c608, field_b21efa,
-               field_4f29f4])
+        print([id, archiving_date, deleted_by, archiving_status, business, current_status_operator,
+               current_status_operator_role, deleted_at, description, finish_time, priority, name, owned_project, owner,
+               tags, start_time, template, updated_by, updated_at, watchers, work_item_id, work_item_status,
+               work_item_type_key, field_f41d15, field_2370b4, field_ab5b49, field_bb1111, field_160c55, field_f8daf8,
+               field_87aa82, field_6f3723, field_589d18, field_eae953, field_249961, field_3f7cb2, field_b5519e,
+               field_b96d04, field_219299, field_7d3046, field_413642, field_09f15d, field_73d52f, field_a77c02,
+               field_2208b5, field_450169, field_d5640f, field_d37ca2, field_2a7b75, field_7f1c99])
         print("当前时间：", current_time)
 
         print("已处理" + str(item) + "条")
         writer.writerow(
-            [id, name, template, priority, start_time, owner, watchers, description, business, owned_project,
-             work_item_id, current_status_operator, work_item_type_key, finish_time, work_item_status, field_693940,
-             field_f29b07, field_0b7e67, field_950dc4, field_20e79e, field_5f5851, field_9b95ea, field_384544,
-             field_7e5bf5, field_a86fff, field_7b36c2, field_54f49c, field_3650f3, field_4383a0, field_028025,
-             field_84c89b, field_dfeb1a, field_aa38f7, field_16da83, field_92ef9d, field_71b04d, field_609710,
-             field_98b3eb, field_919365, field_e80907, field_c3ba8b, field_e29d7a, field_478e51, field_fae060,
-             field_f65322, field_889457, field_2e2be1, field_295df1, field_6647e5, field_728f95, field_f75f76,
-             field_e70224, field_29fb34, field_0c5a16, field_97e739, field_ad5928, field_b482f9, field_030e59,
-             field_29f769, field_f7a203, field_d1563b, field_e941bf, field_b2cc34, tags, field_023d10, field_bb2170,
-             field_bd0076, field_920e01, field_afd864, field_2d9270, field_89c432, field_22c608, field_b21efa,
-             field_4f29f4]
+            [id, archiving_date, deleted_by, archiving_status, business, current_status_operator,
+             current_status_operator_role, deleted_at, description, finish_time, priority, name, owned_project, owner,
+             tags, start_time, template, updated_by, updated_at, watchers, work_item_id, work_item_status,
+             work_item_type_key, field_f41d15, field_2370b4, field_ab5b49, field_bb1111, field_160c55, field_f8daf8,
+             field_87aa82, field_6f3723, field_589d18, field_eae953, field_249961, field_3f7cb2, field_b5519e,
+             field_b96d04, field_219299, field_7d3046, field_413642, field_09f15d, field_73d52f, field_a77c02,
+             field_2208b5, field_450169, field_d5640f, field_d37ca2, field_2a7b75, field_7f1c99]
         )
     return wsd
 
 
 if __name__ == '__main__':
-    a = [get_work_item_query(), get_project_name()]
-    # print(a)
-    # 需要设置csv格式编码,不然后面写入有可能报错
-    csv_name = 'feishu_hive_hf.csv'
-    csvfile = open(csv_name, 'w', newline='', encoding='utf-8-sig')  # python3下
-    writer = csv.writer(csvfile, delimiter='^')
-    # 后面需要新建一个表
-    table_name = 'dop_plm_myplm_prod.ods_ipd_vehicle_demand_feishu_to_hive_hf'
-    # a=get_item_value()
-    # print(a)
-    result = get_work_item_query()
-    get_item_value(result=result, writer=writer)
-
-    csvfile.close()
-
-    # 打开CSV文件
-    with open('feishu_hive_hf.csv', 'r') as file:
-        # 创建CSV读取器
-        csv_reader = csv.reader(file)
-
-        # 逐行读取并打印CSV文件内容
-        for row in csv_reader:
-            print(row)
-    hive_load_table(table_name, csv_name)
+    print(get_work_item_query())
+    print(get_user_perpores())
+    # a = [get_work_item_query(), get_project_name()]
+    # # print(a)
+    # # 需要设置csv格式编码,不然后面写入有可能报错
+    # csv_name = 'feishu_hive_hf.csv'
+    # csvfile = open(csv_name, 'w', newline='', encoding='utf-8-sig')  # python3下
+    # writer = csv.writer(csvfile, delimiter='^')
+    # # 后面需要新建一个表
+    # table_name = 'dop_plm_myplm_prod.ods_ipd_vehicle_spectrum_feishu_to_hive_hf'
+    # # a=get_item_value()
+    # # print(a)
+    # result = get_work_item_query()
+    # get_item_value(result=result, writer=writer)
+    #
+    # csvfile.close()
+    #
+    # # 打开CSV文件
+    # with open('feishu_hive_hf.csv', 'r') as file:
+    #     # 创建CSV读取器
+    #     csv_reader = csv.reader(file)
+    #
+    #     # 逐行读取并打印CSV文件内容
+    #     for row in csv_reader:
+    #         print(row)
+    # hive_load_table(table_name, csv_name)
